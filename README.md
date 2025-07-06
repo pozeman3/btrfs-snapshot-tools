@@ -15,7 +15,7 @@ Clone the repository and run the installer:
 
 
 ```bash
-git clone 
+git clone https://github.com/pozeman3/btrfs-snapshot-tools/
 cd btrfs-snapshot-tools
 chmod +x install.sh
 ./install.sh
