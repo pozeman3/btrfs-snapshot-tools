@@ -14,23 +14,23 @@ mkdir -p "$INSTALL_DIR"
 # Copy and install scripts
 for script in "${SCRIPTS[@]}"; do
     if [[ ! -f "$script" ]]; then
-        echo "❌ Error: '$script' not found in current directory."
+        echo "Error: '$script' not found in current directory."
         exit 1
     fi
 
     chmod +x "$script"
     cp "$script" "$INSTALL_DIR/"
-    echo "✅ Installed $script to $INSTALL_DIR"
+    echo "Installed $script to $INSTALL_DIR"
 done
 
 # Create /snapshots directory (requires sudo)
 if [[ ! -d "$SNAPSHOT_DIR" ]]; then
-    echo "📁 Creating snapshot storage at $SNAPSHOT_DIR (requires sudo)"
+    echo "Creating snapshot storage at $SNAPSHOT_DIR (requires sudo)"
     sudo mkdir -p "$SNAPSHOT_DIR"
     sudo chown "$USER":"$USER" "$SNAPSHOT_DIR"
-    echo "✅ /snapshots created and owned by $USER"
+    echo "/snapshots created and owned by $USER"
 else
-    echo "📁 /snapshots already exists"
+    echo "/snapshots already exists"
 fi
 
 # Detect shell profile to update PATH
@@ -48,20 +48,20 @@ fi
 # Add ~/.local/bin to PATH if missing
 if ! echo "$PATH" | grep -q "$INSTALL_DIR"; then
     echo ""
-    echo "➕ Adding '$INSTALL_DIR' to your PATH in $PROFILE"
+    echo " Adding '$INSTALL_DIR' to your PATH in $PROFILE"
 
     echo "" >> "$PROFILE"
     echo "# Added by btrfs snapshot tools installer" >> "$PROFILE"
     echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$PROFILE"
 
-    echo "🔄 To apply changes now, run:"
+    echo "To apply changes now, run:"
     echo "   source $PROFILE"
 else
-    echo "✅ '$INSTALL_DIR' is already in your PATH"
+    echo "'$INSTALL_DIR' is already in your PATH"
 fi
 
 echo ""
-echo "🎉 Installation complete. You can now run:"
+echo "Installation complete. You can now run:"
 echo "   snapnow      → create snapshots"
 echo "   snaprestore  → restore snapshots"
 
