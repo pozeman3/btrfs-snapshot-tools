@@ -6,12 +6,12 @@ INSTALL_DIR="$HOME/.local/bin"
 SCRIPTS=("snapnow" "snaprestore")
 SNAPSHOT_DIR="/snapshots"
 
-echo "🧹 Uninstalling Btrfs Snapshot Tools..."
+echo "Uninstalling Btrfs Snapshot Tools..."
 
 # Confirm uninstall
 read -p "Are you sure you want to remove snapnow and snaprestore? [y/N]: " confirm
 if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
-    echo "❌ Cancelled."
+    echo "Cancelled."
     exit 1
 fi
 
@@ -19,9 +19,9 @@ fi
 for script in "${SCRIPTS[@]}"; do
     if [[ -f "$INSTALL_DIR/$script" ]]; then
         rm "$INSTALL_DIR/$script"
-        echo "✅ Removed $INSTALL_DIR/$script"
+        echo " Removed $INSTALL_DIR/$script"
     else
-        echo "ℹ️ $script not found in $INSTALL_DIR"
+        echo "ℹ $script not found in $INSTALL_DIR"
     fi
 done
 
@@ -30,9 +30,9 @@ if [[ -d "$SNAPSHOT_DIR" ]]; then
     read -p "Do you also want to delete the /snapshots folder? [y/N]: " rm_snap
     if [[ "$rm_snap" == "y" || "$rm_snap" == "Y" ]]; then
         sudo rm -rf "$SNAPSHOT_DIR"
-        echo "🗑️  /snapshots folder deleted."
+        echo " /snapshots folder deleted."
     else
-        echo "📁 /snapshots preserved."
+        echo " /snapshots preserved."
     fi
 fi
 
@@ -49,12 +49,12 @@ else
 fi
 
 if grep -q "# Added by btrfs snapshot tools installer" "$PROFILE"; then
-    echo "🧽 Cleaning PATH entry from $PROFILE..."
+    echo "Cleaning PATH entry from $PROFILE..."
     sed -i '/# Added by btrfs snapshot tools installer/,+1d' "$PROFILE"
-    echo "✅ Removed PATH addition."
-    echo "🔄 To apply, run: source $PROFILE"
+    echo "Removed PATH addition."
+    echo "To apply, run: source $PROFILE"
 else
-    echo "ℹ️ No PATH changes found in $PROFILE."
+    echo "No PATH changes found in $PROFILE."
 fi
 
-echo "✅ Uninstall complete."
+echo "Uninstall complete."
