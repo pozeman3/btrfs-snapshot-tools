@@ -21,7 +21,7 @@ show_help() {
 
 # === List snapshots if requested ===
 if [[ "$1" == "--list" || "$1" == "-l" ]]; then
-  echo "📁 Snapshots in $SNAPSHOT_DIR:"
+  echo "Snapshots in $SNAPSHOT_DIR:"
   ls -1 "$SNAPSHOT_DIR"
   exit 0
 fi
@@ -32,7 +32,7 @@ while [[ $# -gt 0 ]]; do
     -n) SNAP_NAME="$2"; shift 2 ;;
     -f|--force) FORCE=true; shift ;;
     -h|--help) show_help ;;
-    *) echo "❌ Unknown option: $1"; show_help ;;
+    *) echo "Unknown option: $1"; show_help ;;
   esac
 done
 
@@ -40,17 +40,17 @@ done
 if [[ -z "$SNAP_NAME" ]]; then
   SNAP_NAME=$(ls -1t "$SNAPSHOT_DIR" | head -n 1)
   if [[ -z "$SNAP_NAME" ]]; then
-    echo "❌ No snapshots found."
+    echo "No snapshots found."
     exit 1
   fi
-  echo "📌 Using latest snapshot: $SNAP_NAME"
+  echo "Using latest snapshot: $SNAP_NAME"
 fi
 
 SNAP_PATH="$SNAPSHOT_DIR/$SNAP_NAME"
 
 # === Validate snapshot ===
 if [[ ! -d "$SNAP_PATH" ]]; then
-  echo "❌ Snapshot not found: $SNAP_NAME"
+  echo "Snapshot not found: $SNAP_NAME"
   exit 1
 fi
 
@@ -59,7 +59,7 @@ RESTORE_PATH="/$TARGET_NAME"
 
 # === Confirm overwrite ===
 if [[ -e "$RESTORE_PATH" && "$FORCE" != true ]]; then
-  echo "⚠️  '$RESTORE_PATH' already exists."
+  echo " '$RESTORE_PATH' already exists."
   read -p "Overwrite it? [y/N]: " confirm
   [[ "$confirm" != "y" && "$confirm" != "Y" ]] && exit 1
 fi
@@ -68,6 +68,6 @@ fi
 sudo btrfs subvolume delete "$RESTORE_PATH" &>/dev/null || sudo rm -rf "$RESTORE_PATH"
 
 # === Restore snapshot ===
-echo "♻️ Restoring '$SNAP_NAME' to '$RESTORE_PATH'..."
+echo "Restoring '$SNAP_NAME' to '$RESTORE_PATH'..."
 sudo btrfs subvolume snapshot "$SNAP_PATH" "$RESTORE_PATH"
-echo "✅ Restored: $RESTORE_PATH"
+echo "Restored: $RESTORE_PATH"
