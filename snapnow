@@ -1,0 +1,68 @@
+#!/bin/bash
+
+# === Config ===
+DEST="/snapshots"
+TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
+READONLY=false
+SNAP_NAME=""
+CUSTOM_PATH="$(pwd)"  # Default: current directory
+
+# === Help ===
+show_help() {
+  echo "Usage: snapnow [options]"
+  echo ""
+  echo "By default, snapshots the current working directory."
+  echo ""
+  echo "Options:"
+  echo "  -g           Snapshot /home"
+  echo "  -r           Snapshot /"
+  echo "  -p <path>    Snapshot custom Btrfs subvolume"
+  echo "  -o           Create read-only snapshot"
+  echo "  -n <name>    Use custom name for snapshot"
+  echo "  -l, --list   List all snapshots"
+  echo "  -h, --help   Show help"
+  exit 0
+}
+
+# === List snapshots if requested ===
+if [[ "$1" == "--list" || "$1" == "-l" ]]; then
+  echo "📁 Snapshots in $DEST:"
+  ls -1 "$DEST"
+  exit 0
+fi
+
+# === Parse flags ===
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -g) CUSTOM_PATH="/home"; shift ;;
+    -r) CUSTOM_PATH="/"; shift ;;
+    -p) CUSTOM_PATH="$2"; shift 2 ;;
+    -o) READONLY=true; shift ;;
+    -n) SNAP_NAME="$2"; shift 2 ;;
+    -h|--help) show_help ;;
+    *) echo "❌ Unknown option: $1"; show_help ;;
+  esac
+done
+
+# === Check that target is a Btrfs subvolume ===
+if ! sudo btrfs subvolume show "$CUSTOM_PATH" &>/dev/null; then
+  echo "❌ Error: '$CUSTOM_PATH' is not a Btrfs subvolume."
+  exit 1
+fi
+
+# === Prepare snapshot name ===
+if [[ -z "$SNAP_NAME" ]]; then
+  SNAP_NAME="$(basename "$CUSTOM_PATH")-$TIMESTAMP"
+fi
+
+SNAP_PATH="$DEST/$SNAP_NAME"
+mkdir -p "$DEST"
+
+# === Create snapshot ===
+if [[ "$READONLY" = true ]]; then
+  sudo btrfs subvolume snapshot -r "$CUSTOM_PATH" "$SNAP_PATH"
+else
+  sudo btrfs subvolume snapshot "$CUSTOM_PATH" "$SNAP_PATH"
+fi
+
+echo "✅ Snapshot created at: $SNAP_PATH"

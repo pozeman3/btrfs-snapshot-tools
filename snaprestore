@@ -1,0 +1,73 @@
+#!/bin/bash
+
+# === Config ===
+SNAPSHOT_DIR="/snapshots"
+SNAP_NAME=""
+FORCE=false
+
+# === Help ===
+show_help() {
+  echo "Usage: snaprestore [options]"
+  echo ""
+  echo "By default, restores the latest snapshot."
+  echo ""
+  echo "Options:"
+  echo "  -n <name>     Restore specific snapshot"
+  echo "  -l, --list    List available snapshots"
+  echo "  -f, --force   Overwrite existing path without asking"
+  echo "  -h, --help    Show help"
+  exit 0
+}
+
+# === List snapshots if requested ===
+if [[ "$1" == "--list" || "$1" == "-l" ]]; then
+  echo "📁 Snapshots in $SNAPSHOT_DIR:"
+  ls -1 "$SNAPSHOT_DIR"
+  exit 0
+fi
+
+# === Parse flags ===
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -n) SNAP_NAME="$2"; shift 2 ;;
+    -f|--force) FORCE=true; shift ;;
+    -h|--help) show_help ;;
+    *) echo "❌ Unknown option: $1"; show_help ;;
+  esac
+done
+
+# === Get latest snapshot if none given ===
+if [[ -z "$SNAP_NAME" ]]; then
+  SNAP_NAME=$(ls -1t "$SNAPSHOT_DIR" | head -n 1)
+  if [[ -z "$SNAP_NAME" ]]; then
+    echo "❌ No snapshots found."
+    exit 1
+  fi
+  echo "📌 Using latest snapshot: $SNAP_NAME"
+fi
+
+SNAP_PATH="$SNAPSHOT_DIR/$SNAP_NAME"
+
+# === Validate snapshot ===
+if [[ ! -d "$SNAP_PATH" ]]; then
+  echo "❌ Snapshot not found: $SNAP_NAME"
+  exit 1
+fi
+
+TARGET_NAME=$(echo "$SNAP_NAME" | cut -d '-' -f 1)
+RESTORE_PATH="/$TARGET_NAME"
+
+# === Confirm overwrite ===
+if [[ -e "$RESTORE_PATH" && "$FORCE" != true ]]; then
+  echo "⚠️  '$RESTORE_PATH' already exists."
+  read -p "Overwrite it? [y/N]: " confirm
+  [[ "$confirm" != "y" && "$confirm" != "Y" ]] && exit 1
+fi
+
+# === Delete current target ===
+sudo btrfs subvolume delete "$RESTORE_PATH" &>/dev/null || sudo rm -rf "$RESTORE_PATH"
+
+# === Restore snapshot ===
+echo "♻️ Restoring '$SNAP_NAME' to '$RESTORE_PATH'..."
+sudo btrfs subvolume snapshot "$SNAP_PATH" "$RESTORE_PATH"
+echo "✅ Restored: $RESTORE_PATH"
