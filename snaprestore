@@ -19,14 +19,14 @@ show_help() {
   exit 0
 }
 
-# === List snapshots if requested ===
+# === List snapshots ===
 if [[ "$1" == "--list" || "$1" == "-l" ]]; then
   echo "Snapshots in $SNAPSHOT_DIR:"
   ls -1 "$SNAPSHOT_DIR"
   exit 0
 fi
 
-# === Parse flags ===
+# === Parse arguments ===
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -n) SNAP_NAME="$2"; shift 2 ;;
@@ -36,7 +36,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# === Get latest snapshot if none given ===
+# === Pick latest if none provided ===
 if [[ -z "$SNAP_NAME" ]]; then
   SNAP_NAME=$(ls -1t "$SNAPSHOT_DIR" | head -n 1)
   if [[ -z "$SNAP_NAME" ]]; then
@@ -47,25 +47,32 @@ if [[ -z "$SNAP_NAME" ]]; then
 fi
 
 SNAP_PATH="$SNAPSHOT_DIR/$SNAP_NAME"
+TARGET_NAME=$(echo "$SNAP_NAME" | sed 's/-.*$//')
+RESTORE_PATH="/$TARGET_NAME"
 
-# === Validate snapshot ===
+# === Validate snapshot directory ===
 if [[ ! -d "$SNAP_PATH" ]]; then
-  echo "Snapshot not found: $SNAP_NAME"
+  echo "Snapshot not found: $SNAP_PATH"
   exit 1
 fi
 
-TARGET_NAME=$(echo "$SNAP_NAME" | cut -d '-' -f 1)
-RESTORE_PATH="/$TARGET_NAME"
-
-# === Confirm overwrite ===
+# === Confirm restore target ===
 if [[ -e "$RESTORE_PATH" && "$FORCE" != true ]]; then
-  echo " '$RESTORE_PATH' already exists."
+  echo "'$RESTORE_PATH' already exists."
   read -p "Overwrite it? [y/N]: " confirm
   [[ "$confirm" != "y" && "$confirm" != "Y" ]] && exit 1
 fi
 
-# === Delete current target ===
-sudo btrfs subvolume delete "$RESTORE_PATH" &>/dev/null || sudo rm -rf "$RESTORE_PATH"
+# === Check if restore path is a subvolume ===
+IS_SUBVOL=$(sudo btrfs subvolume list / | awk '{print $NF}' | grep -xq "${TARGET_NAME}" && echo "yes" || echo "no")
+
+if [[ "$IS_SUBVOL" == "yes" ]]; then
+  echo "Deleting subvolume '$RESTORE_PATH'..."
+  sudo btrfs subvolume delete "$RESTORE_PATH"
+else
+  echo "'$RESTORE_PATH' is not a Btrfs subvolume. Aborting to prevent data loss."
+  exit 1
+fi
 
 # === Restore snapshot ===
 echo "Restoring '$SNAP_NAME' to '$RESTORE_PATH'..."
